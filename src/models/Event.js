@@ -6,7 +6,7 @@ const EventSchema = new mongoose.Schema(
     description: String,
     price: Number,
     thumbnail: String,
-    spocategory: String,
+    category: String,
     date: Date,
     user: {
       type: mongoose.Schema.Types.ObjectId,
