@@ -1,5 +1,11 @@
+
+
+//TODO: chance and put jwt secret in env file before pushing to heroku 
+
+
 const bcrypt = require('bcrypt')
 const User = require('../models/User')
+const jwt = require('jsonwebtoken')
 
 module.exports = {
 	async createUser(req, res) {
@@ -9,34 +15,35 @@ module.exports = {
 
 			if (!existentUser) {
 				const hashPassword = await bcrypt.hash(password, 10)
-				const user = await User.create({
+				const userResponse = await User.create({
 					email,
 					firstName,
 					lastName,
 					password: hashPassword,
 				})
-				
-				return res.json({
-					_id: user._id,
-					email: user.email,
-					firstName: user.firstName,
-					lastName: user.lastName
+
+				return jwt.sign({ user: userResponse }, 'secret', (err, token) => {
+					return res.json({
+						user: token,
+						user_id: userResponse._id
+					})
+				})
+			} else {
+				return res.status(400).json({
+					message:
+						'email already exist!  do you want to login instead? ',
 				})
 			}
-			return res.status(400).json({
-				message:
-					'email already exist!  do you want to login instead? ',
-			})
 		} catch (err) {
 			throw Error(`Error while Registering new user :  ${err}`)
 		}
 	},
 
 	async getUserById(req, res) {
-		const { userId } = req.params;
+		const { userId } = req.params
 
 		try {
-			const user = await User.findById(userId);
+			const user = await User.findById(userId)
 			return res.json(user)
 		} catch (error) {
 			return res.status(400).json({

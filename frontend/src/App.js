@@ -6,7 +6,7 @@ import './App.css';
 function App() {
   return (
     <Container>
-      <h1>Category's App</h1>
+      <h1>Events Booker's App</h1>
       <div className="content">
         <Routes/>
       </div>
