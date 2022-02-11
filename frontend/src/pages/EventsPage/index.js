@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import api from '../../services/api';
-import { Container, Button, Form, FormGroup, Input, Label, Alert } from 'reactstrap';
+import { Alert, Container, Button, Form, FormGroup, Input, Label, DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap';
 import cameraIcon from '../../assets/camera.png'
 import "./events.css";
 
@@ -9,10 +9,13 @@ export default function EventsPage({ history }) {
     const [description, setDescription] = useState('')
     const [price, setPrice] = useState('')
     const [thumbnail, setThumbnail] = useState(null)
-    const [category, setcategory] = useState('')
+    const [category, setCategory] = useState('Category')
     const [date, setDate] = useState('')
     const [error, setError] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [dropdownOpen, setOpen] = useState(false);
+
+    const toggle = () => setOpen(!dropdownOpen);
 
     const preview = useMemo(() => {
         return thumbnail ? URL.createObjectURL(thumbnail) : null;
@@ -36,7 +39,7 @@ export default function EventsPage({ history }) {
             if (title !== "" &&
                 description !== "" &&
                 price !== "" &&
-                category !== "" &&
+                category !== "Category" &&
                 date !== "" &&
                 thumbnail !== null
             ) {
@@ -44,6 +47,7 @@ export default function EventsPage({ history }) {
                 setSuccess(true)
                 setTimeout(() => {
                     setSuccess(false)
+                    history.push("/")
                 }, 2000)
             } else {
                 setError(true)
@@ -57,7 +61,9 @@ export default function EventsPage({ history }) {
         }
     }
 
+    const categoryEventHandler = (category) => setCategory(category);
 
+    console.log(category)
     return (
         <Container>
             <h2>Create your Event</h2>
@@ -69,10 +75,6 @@ export default function EventsPage({ history }) {
                             <Input type="file" onChange={evt => setThumbnail(evt.target.files[0])} />
                             <img src={cameraIcon} style={{ maxWidth: "50px" }} alt="upload icon image" />
                         </Label>
-                    </FormGroup>
-                    <FormGroup>
-                        <Label>category: </Label>
-                        <Input id="category" type="text" value={category} placeholder={'category name'} onChange={(evt) => setcategory(evt.target.value)} />
                     </FormGroup>
                     <FormGroup>
                         <Label>Title: </Label>
@@ -90,13 +92,24 @@ export default function EventsPage({ history }) {
                         <Label>Event date: </Label>
                         <Input id="date" type="date" value={date} placeholder={'Event Price £0.00'} onChange={(evt) => setDate(evt.target.value)} />
                     </FormGroup>
+                    <FormGroup>
+                        <ButtonDropdown isOpen={dropdownOpen} toggle={toggle}>
+                            <Button id="caret" value={category} disabled>{category}</Button>
+                            <DropdownToggle caret />
+                            <DropdownMenu>
+                                <DropdownItem onClick={() => categoryEventHandler('running')}>running</DropdownItem>
+                                <DropdownItem onClick={() => categoryEventHandler('cycling')}>cycling</DropdownItem>
+                                <DropdownItem onClick={() => categoryEventHandler('swimming')}>swimming</DropdownItem>
+                            </DropdownMenu>
+                        </ButtonDropdown>
+                    </FormGroup>
                 </div>
                 <FormGroup>
                     <Button className="submit-btn">Submit</Button>
                 </FormGroup>
                 <FormGroup>
-                    <Button className="secondary-btn" onClick={() => history.push("/dashboard")}>
-                        Dashboard
+                    <Button className="secondary-btn" onClick={() => history.push("/")}>
+                        Cancel
                     </Button>
                 </FormGroup>
             </Form>

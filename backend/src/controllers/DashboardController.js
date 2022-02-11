@@ -15,7 +15,7 @@ module.exports = {
     },
     async getAllEvents(req, res) {
         const { category } = req.params;
-        const query = { category } || {}
+        const query = category ? { category } : {}
 
         try {
             const events = await Event.find(query)
@@ -25,6 +25,20 @@ module.exports = {
             }
         } catch (error) {
             return res.status(400).json({ message: 'We do have any events yet' })
+        }
+    },
+
+    async getEventsByUserId(req, res) {
+        const { user_id } = req.headers;
+
+        try {
+            const events = await Event.find({ user: user_id })
+
+            if (events) {
+                return res.json(events)
+            }
+        } catch (error) {
+            return res.status(400).json({ message: `We do have any events with the user_id ${user_id}`})
         }
     }
 }
