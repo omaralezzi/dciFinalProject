@@ -1,5 +1,4 @@
 const express = require('express')
-const multer = require('multer')
 const verifyToken = require('./config/verifyToken')
 
 const UserController = require('./controllers/UserController')
@@ -9,10 +8,8 @@ const LoginController = require('./controllers/LoginController')
 const RegistrationController = require('./controllers/RegistrationController')
 const ApprovalController = require('./controllers/ApprovalController')
 const RejectionController = require('./controllers/RejectionController')
-const uploadConfig = require('./config/upload')
-
+const uploadToS3 = require('./config/s3Upload');
 const routes = express.Router()
-const upload = multer(uploadConfig)
 
 routes.get('/status', (req, res) => {
 	res.send({ status: 200 })
@@ -20,9 +17,10 @@ routes.get('/status', (req, res) => {
 
 //Registration
 routes.post('/registration/:eventId', verifyToken, RegistrationController.create)
+routes.get('/registration', verifyToken, RegistrationController.getMyRegistrations)
 routes.get('/registration/:registration_id', RegistrationController.getRegistration)
-routes.post('/registration/:registration_id/approvals', ApprovalController.approval)
-routes.post('/registration/:registration_id/rejections', RejectionController.rejection)
+routes.post('/registration/:registration_id/approvals', verifyToken, ApprovalController.approval)
+routes.post('/registration/:registration_id/rejections', verifyToken, RejectionController.rejection)
 
 //Login
 routes.post('/login', LoginController.store)
@@ -33,8 +31,8 @@ routes.get('/dashboard', verifyToken, DashboardController.getAllEvents)
 routes.get('/user/events', verifyToken, DashboardController.getEventsByUserId)
 routes.get('/event/:eventId', verifyToken, DashboardController.getEventById)
 
-//Events
-routes.post('/event', verifyToken, upload.single('thumbnail'), EventController.createEvent)
+//Events 
+routes.post('/event', verifyToken, uploadToS3.single('thumbnail'), EventController.createEvent)
 routes.delete('/event/:eventId', verifyToken, EventController.delete)
 
 //User

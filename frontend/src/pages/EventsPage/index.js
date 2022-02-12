@@ -1,127 +1,66 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import api from '../../services/api';
-import { Alert, Container, Button, Form, FormGroup, Input, Label, DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap';
-import cameraIcon from '../../assets/camera.png'
-import "./events.css";
+import React, { useState, useContext } from 'react';
+import api from '../../services/api'
+import { Alert, Container, Button, Form, FormGroup, Input } from 'reactstrap';
+import { UserContext } from '../../user-context'
 
-export default function EventsPage({ history }) {
-    const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
-    const [price, setPrice] = useState('')
-    const [thumbnail, setThumbnail] = useState(null)
-    const [category, setCategory] = useState('Category')
-    const [date, setDate] = useState('')
+export default function Login({ history }) {
+    const { setIsloggedIn } = useContext(UserContext);
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
     const [error, setError] = useState(false)
-    const [success, setSuccess] = useState(false)
-    const [dropdownOpen, setOpen] = useState(false);
-    const user = localStorage.getItem('user');
+    const [errorMessage, setErrorMessage] = useState("false")
 
-    useEffect(() => {
-        if (!user) history.push('/login');
-    }, [])
-
-    const toggle = () => setOpen(!dropdownOpen);
-
-    const preview = useMemo(() => {
-        return thumbnail ? URL.createObjectURL(thumbnail) : null;
-    }, [thumbnail])
-
-    const submitHandler = async (evt) => {
-        evt.preventDefault()
-
-        const eventData = new FormData();
-
-        eventData.append("thumbnail", thumbnail)
-        eventData.append("category", category)
-        eventData.append("title", title)
-        eventData.append("price", price)
-        eventData.append("description", description)
-        eventData.append("date", date)
-
+    const handleSubmit = async evt => {
+        evt.preventDefault();
+        const response = await api.post('/login', { email, password })
+        const user_id = response.data.user_id || false;
+        const user = response.data.user || false;
 
         try {
-            if (title !== "" &&
-                description !== "" &&
-                price !== "" &&
-                category !== "category" &&
-                date !== "" &&
-                thumbnail !== null
-            ) {
-                await api.post("/event", eventData, { headers: { user } })
-                setSuccess(true)
-                setTimeout(() => {
-                    setSuccess(false)
-                    history.push("/")
-                }, 2000)
+            if (user && user_id) {
+                localStorage.setItem('user', user)
+                localStorage.setItem('user_id', user_id)
+                setIsloggedIn(true);
+                history.push('/')
             } else {
+                const { message } = response.data
                 setError(true)
+                setErrorMessage(message)
                 setTimeout(() => {
                     setError(false)
+                    setErrorMessage("")
                 }, 2000)
             }
         } catch (error) {
-            Promise.reject(error);
-            console.log(error);
+            setError(true)
+            setErrorMessage("Error, the server returned an error")
         }
     }
 
-    const categoryEventHandler = (category) => setCategory(category);
-
     return (
         <Container>
-            <h2>Create your Event</h2>
-            <Form onSubmit={submitHandler}>
+            <h2>Login:</h2>
+            <p>Please <strong>Login</strong> into your account</p>
+            <Form onSubmit={handleSubmit}>
                 <div className="input-group">
-                    <FormGroup>
-                        <Label>Upload Image: </Label>
-                        <Label id='thumbnail' style={{ backgroundImage: `url(${preview})` }} className={thumbnail ? 'has-thumbnail' : ''}>
-                            <Input type="file" onChange={evt => setThumbnail(evt.target.files[0])} />
-                            <img src={cameraIcon} style={{ maxWidth: "50px" }} alt="upload icon image" />
-                        </Label>
+                    <FormGroup className="form-group-"></FormGroup>
+                    <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                        <Input type="email" name="email" id="email" placeholder="Your email" onChange={evt => setEmail(evt.target.value)} />
                     </FormGroup>
-                    <FormGroup>
-                        <Label>Title: </Label>
-                        <Input id="title" type="text" value={title} placeholder={'Event Title'} onChange={(evt) => setTitle(evt.target.value)} />
-                    </FormGroup>
-                    <FormGroup>
-                        <Label>Event description: </Label>
-                        <Input id="description" type="text" value={description} placeholder={'Event Description'} onChange={(evt) => setDescription(evt.target.value)} />
-                    </FormGroup>
-                    <FormGroup>
-                        <Label>Event price: </Label>
-                        <Input id="price" type="text" value={price} placeholder={'Event Price £0.00'} onChange={(evt) => setPrice(evt.target.value)} />
-                    </FormGroup>
-                    <FormGroup>
-                        <Label>Event date: </Label>
-                        <Input id="date" type="date" value={date} placeholder={'Event Price £0.00'} onChange={(evt) => setDate(evt.target.value)} />
-                    </FormGroup>
-                    <FormGroup>
-                        <ButtonDropdown isOpen={dropdownOpen} toggle={toggle}>
-                            <Button id="caret" value={category} disabled>{category}</Button>
-                            <DropdownToggle caret />
-                            <DropdownMenu>
-                                <DropdownItem onClick={() => categoryEventHandler('concert')}>concert</DropdownItem>
-                                <DropdownItem onClick={() => categoryEventHandler('musical')}>musical</DropdownItem>
-                                <DropdownItem onClick={() => categoryEventHandler('culture')}>culture</DropdownItem>
-                            </DropdownMenu>
-                        </ButtonDropdown>
+                    <FormGroup className="mb-2 mr-sm-2 mb-sm-0">
+                        <Input type="password" name="password" id="password" placeholder="Your password" onChange={evt => setPassword(evt.target.value)} />
                     </FormGroup>
                 </div>
                 <FormGroup>
                     <Button className="submit-btn">Submit</Button>
                 </FormGroup>
                 <FormGroup>
-                    <Button className="secondary-btn" onClick={() => history.push("/")}>
-                        Cancel
-                    </Button>
+                    <Button className="secondary-btn" onClick={() => history.push("/register")}>New Account</Button>
                 </FormGroup>
             </Form>
             {error ? (
-                <Alert className="event-validation" color="danger"> Missing required information</Alert>
-            ) : ""}
-            {success ? (
-                <Alert className="event-validation" color="success"> The event was created successfully!</Alert>
+                <Alert className="event-validation" color="danger"> {errorMessage}</Alert>
             ) : ""}
         </Container>
-    )
+    );
 }

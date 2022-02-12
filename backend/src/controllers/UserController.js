@@ -1,8 +1,5 @@
 
 
-//TODO: chance and put jwt secret in env file before pushing to heroku 
-
-
 const bcrypt = require('bcrypt')
 const User = require('../models/User')
 const jwt = require('jsonwebtoken')
@@ -22,7 +19,7 @@ module.exports = {
 					password: hashPassword,
 				})
 
-				return jwt.sign({ user: userResponse }, 'secret', (err, token) => {
+				return jwt.sign({ user: userResponse }, process.env.JWT_SECRET, (err, token) => {
 					return res.json({
 						user: token,
 						user_id: userResponse._id
@@ -53,3 +50,4 @@ module.exports = {
 		}
 	}
 }
+

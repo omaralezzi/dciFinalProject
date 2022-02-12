@@ -1,19 +1,26 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import api from '../../services/api';
 import moment from 'moment';
-import { Button, ButtonGroup, Alert } from 'reactstrap';
+import { Button, ButtonGroup, Alert, Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap';
 import socketio from 'socket.io-client';
 import './dashboard.css'
-//Dashboard will show all the events 
+
+
 export default function Dashboard({ history }) {
-    const [events, setEvents] = useState([]);
-    const user = localStorage.getItem('user');
-    const user_id = localStorage.getItem('user_id');
-    const [rSelected, setRSelected] = useState(null);
+    const [events, setEvents] = useState([])
+    const user = localStorage.getItem('user')
+    const user_id = localStorage.getItem('user_id')
+
+    const [rSelected, setRSelected] = useState(null)
     const [error, setError] = useState(false);
     const [success, setSuccess] = useState(false)
-    const [messageHandler, setMessageHandler] = useState('');
+    const [messageHandler, setMessageHandler] = useState('')
     const [eventsRequest, setEventsRequest] = useState([])
+    const [dropdownOpen, setDropDownOpen] = useState(false)
+    const [eventRequestMessage, setEventRequestMessage] = useState('')
+    const [eventRequestSuccess, setEventRequestSuccess] = useState(false)
+
+    const toggle = () => setDropDownOpen(!dropdownOpen);
 
     useEffect(() => {
         getEvents()
@@ -24,6 +31,7 @@ export default function Dashboard({ history }) {
             socketio.connect('http://localhost:8000/', { query: { user: user_id } }),
         [user_id]
     );
+
 
     useEffect(() => {
         socket.on('registration_request', data => setEventsRequest([...eventsRequest, data]));
@@ -41,7 +49,6 @@ export default function Dashboard({ history }) {
             setEvents(response.data.events)
         } catch (error) {
             history.push('/login');
-
         }
 
     }
@@ -79,16 +86,9 @@ export default function Dashboard({ history }) {
         }
     }
 
-    const logoutHandler = () => {
-        localStorage.removeItem('user')
-        localStorage.removeItem('user_id')
-        history.push('/login');
-    }
-
     const registrationRequestHandler = async (event) => {
         try {
             await api.post(`/registration/${event.id}`, {}, { headers: { user } })
-
             setSuccess(true)
             setMessageHandler(`The request for the event ${event.title} was successfully!`)
             setTimeout(() => {
@@ -107,42 +107,78 @@ export default function Dashboard({ history }) {
         }
     }
 
+    const acceptEventHandler = async (eventId) => {
+        try {
+            await api.post(`/registration/${eventId}/approvals`, {}, { headers: { user } })
+            setEventRequestSuccess(true)
+            setEventRequestMessage('Event approved successfully!')
+            removeNotificationFromDashboard(eventId)
+            setTimeout(() => {
+                setEventRequestSuccess(false)
+                setEventRequestMessage('')
+            }, 2000)
+
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
+    const rejectEventHandler = async (eventId) => {
+        try {
+            await api.post(`/registration/${eventId}/rejections`, {}, { headers: { user } })
+            setEventRequestSuccess(true)
+            setEventRequestMessage('Event rejected successfully!')
+            removeNotificationFromDashboard(eventId)
+            setTimeout(() => {
+                setEventRequestSuccess(false)
+                setEventRequestMessage('')
+            }, 2000)
+
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
+    const removeNotificationFromDashboard = (eventId) => {
+        const newEvents = eventsRequest.filter((event) => event._id !== eventId)
+        setEventsRequest(newEvents)
+    }
+
     return (
         <>
             <ul className="notifications">
                 {eventsRequest.map(request => {
-                    console.log(request)
                     return (
-                        <li key={request.id}>
+                        <li key={request._id}>
                             <div>
                                 <strong>{request.user.email} </strong> is requesting to register to your Event <strong>{request.event.title}</strong>
                             </div>
                             <ButtonGroup>
-
-                                <Button color="secondary" onClick={() => { }}>Accept</Button>
-                                <Button color="danger" onClick={() => { }}>Cancel</Button>
+                                <Button color="secondary" onClick={() => acceptEventHandler(request._id)}>Accept</Button>
+                                <Button color="danger" onClick={() => rejectEventHandler(request._id)}>Reject</Button>
                             </ButtonGroup>
                         </li>
                     )
                 })}
-
             </ul>
+            {eventRequestSuccess ? <Alert color="success"> {eventRequestMessage}</Alert> : ""}
             <div className="filter-panel">
-                <ButtonGroup>
-                    <Button color="primary" onClick={() => filterHandler(null)} active={rSelected === null}>All Categorys</Button>
-                    <Button color="primary" onClick={myEventsHandler} active={rSelected === 'myevents'}>My Events</Button>
-                    <Button color="primary" onClick={() => filterHandler("concert")} active={rSelected === 'concert'}>concert</Button>
-                    <Button color="primary" onClick={() => filterHandler("musical")} active={rSelected === 'musical'}>musical</Button>
-                    <Button color="primary" onClick={() => filterHandler('culture')} active={rSelected === 'culture'}>culture</Button>
-                </ButtonGroup>
-                <ButtonGroup>
-                    <Button color="secondary" onClick={() => history.push('events')}>Events</Button>
-                    <Button color="danger" onClick={logoutHandler}>Logout</Button>
-                </ButtonGroup>
+                <Dropdown isOpen={dropdownOpen} toggle={toggle}>
+                    <DropdownToggle color="primary" caret>
+                        Filter
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        <DropdownItem onClick={() => filterHandler(null)} active={rSelected === null} >All Categorys</DropdownItem>
+                        <DropdownItem onClick={myEventsHandler} active={rSelected === 'myevents'} >My Events</DropdownItem>
+                        <DropdownItem onClick={() => filterHandler("concert")} active={rSelected === 'concert'} >Concert</DropdownItem>
+                        <DropdownItem onClick={() => filterHandler("musical")} active={rSelected === 'musical'} >Musical</DropdownItem>
+                        <DropdownItem color="primary" onClick={() => filterHandler('culture')} active={rSelected === 'Culture'} >culture</DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
             </div>
             <ul className="events-list">
                 {events.map(event => (
-                    <li key={event._id}>
+                    < li key={event._id} >
                         <header style={{ backgroundImage: `url(${event.thumbnail_url})` }}>
                             {event.user === user_id ? <div><Button color="danger" size="sm" onClick={() => deleteEventHandler(event._id)}>Delete</Button></div> : ""}
 

@@ -6,12 +6,12 @@ const jwt = require('jsonwebtoken')
 
 module.exports = {
 	createEvent(req, res) {
-		jwt.verify(req.token, 'secret', async (err, authData) => {
+		jwt.verify(req.token, process.env.JWT_SECRET, async (err, authData) => {
 			if (err) {
 				res.statusCode(401)
 			} else {
 				const { title, description, price, category, date } = req.body
-				const { filename } = req.file
+				const { location } = req.file
 
 				const user = await User.findById(authData.user._id)
 
@@ -26,7 +26,7 @@ module.exports = {
 						category,
 						price: parseFloat(price),
 						user: authData.user._id,
-						thumbnail: filename,
+						thumbnail: location,
 						date
 					})
 
@@ -40,7 +40,7 @@ module.exports = {
 	},
 
 	delete(req, res) {
-		jwt.verify(req.token, 'secret', async (err) => {
+		jwt.verify(req.token, process.env.JWT_SECRET, async (err) => {
 			if (err) {
 				res.statusCode(401)
 			} else {

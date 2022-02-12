@@ -14,7 +14,6 @@ const io = require("socket.io")(server, {
 	}
 });
 
-
 if (process.env.NODE_ENV !== 'production') {
 	require('dotenv').config()
 }
@@ -24,9 +23,9 @@ try {
 		useNewUrlParser: true,
 		useUnifiedTopology: true,
 	})
-	console.log('MongoDb connected successfully!')
+	console.log('MongoDB connected successfully!')
 } catch (error) {
-	console.log(error.message)
+	console.log(error)
 }
 
 const connectUsers = {}
@@ -49,5 +48,5 @@ app.use('/files', express.static(path.resolve(__dirname, '..', 'files')))
 app.use(routes)
 
 server.listen(PORT, () => {
-	console.log(`Listening on ${PORT}`)
+	console.log(`Server is Listening on ${PORT}`)
 })
